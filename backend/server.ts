@@ -9,6 +9,7 @@ import { errorMiddleware, notFoundMiddleware } from "./src/middlewares/errors-mi
 import { AppDataSource } from "./src/config/database";
 import { swaggerSpec } from "./src/config/swagger";
 import { globalRateLimit } from "./src/middlewares/rate-limit.middleware"; // ← novo
+import remedioRoutes from "./src/routes/remedio-routes";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(globalRateLimit); // ← antes de tudo, protege toda a API
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/user", userRoutes);
+app.use("/remedio", remedioRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
