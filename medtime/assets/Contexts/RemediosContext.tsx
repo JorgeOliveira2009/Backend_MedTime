@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+
+const API_URL = 'https://backend-or-main-production-a372.up.railway.app';
 
 /* ─── Tipos ─── */
 export interface Remedio {
@@ -8,67 +9,92 @@ export interface Remedio {
   nome: string;
   horario: string;
   tomado: boolean;
+  observacoes?: string | null;
 }
 
 interface RemediosContextType {
   remedios: Remedio[];
   carregado: boolean;
-  adicionarRemedio: (r: Omit<Remedio, 'id' | 'tomado'>) => void;
-  toggleRemedio: (id: number) => void;
-  removerRemedio: (id: number) => void;
+  adicionarRemedio: (r: Omit<Remedio, 'id' | 'tomado'>) => Promise<void>;
+  toggleRemedio: (id: number) => Promise<void>;
+  removerRemedio: (id: number) => Promise<void>;
 }
 
 const RemediosContext = createContext<RemediosContextType | undefined>(undefined);
 
 /* ─── Provider ─── */
 export function RemediosProvider({ children }: { children: React.ReactNode }) {
-  const { usuarioAtual, carregado: authCarregado } = useAuth();
+  const { token, carregado: authCarregado } = useAuth(); // ← usa token e carregado
   const [remedios, setRemedios] = useState<Remedio[]>([]);
   const [carregado, setCarregado] = useState(false);
 
-  // Chave única por usuário — cada conta tem seu próprio "balde" de remédios
-  const storageKey = usuarioAtual ? `@medtime:remedios:${usuarioAtual}` : null;
+  // headers padrão com o token
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
 
-  // Recarrega toda vez que o usuário logado mudar (login, troca de conta, logout)
+  // busca os remédios do banco quando o usuário logar
   useEffect(() => {
     if (!authCarregado) return;
 
-    if (!storageKey) {
+    if (!token) {
       setRemedios([]);
       setCarregado(true);
       return;
     }
 
     setCarregado(false);
-    AsyncStorage.getItem(storageKey)
-      .then(json => setRemedios(json ? JSON.parse(json) : []))
+    fetch(`${API_URL}/remedio`, { headers })
+      .then(res => res.json())
+      .then(data => {
+        if (data.sucesso) setRemedios(data.data);
+      })
       .catch(err => console.error('Erro ao carregar remédios:', err))
       .finally(() => setCarregado(true));
-  }, [storageKey, authCarregado]);
+  }, [token, authCarregado]);
 
-  // Salva no disco sempre que a lista mudar (depois do carregamento inicial)
-  useEffect(() => {
-    if (!carregado || !storageKey) return;
-    AsyncStorage.setItem(storageKey, JSON.stringify(remedios)).catch(err =>
-      console.error('Erro ao salvar remédios:', err)
-    );
-  }, [remedios, carregado, storageKey]);
-
-  function adicionarRemedio(dados: Omit<Remedio, 'id' | 'tomado'>) {
-    setRemedios(prev => [
-      ...prev,
-      { ...dados, id: Date.now(), tomado: false },
-    ]);
+  async function adicionarRemedio(dados: Omit<Remedio, 'id' | 'tomado'>) {
+    const res = await fetch(`${API_URL}/remedio`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dados),
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      setRemedios(prev => [...prev, data.data]);
+    } else {
+      throw new Error(data.message || 'Erro ao adicionar remédio');
+    }
   }
 
-  function toggleRemedio(id: number) {
-    setRemedios(prev =>
-      prev.map(r => (r.id === id ? { ...r, tomado: !r.tomado } : r))
-    );
+  async function toggleRemedio(id: number) {
+    const res = await fetch(`${API_URL}/remedio/${id}/tomado`, {
+      method: 'PATCH',
+      headers,
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      setRemedios(prev =>
+        prev.map(r => (r.id === id ? data.data : r))
+      );
+    } else {
+      throw new Error(data.message || 'Erro ao atualizar remédio');
+    }
   }
 
-  function removerRemedio(id: number) {
-    setRemedios(prev => prev.filter(r => r.id !== id));
+  async function removerRemedio(id: number) {
+    const res = await fetch(`${API_URL}/remedio/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      setRemedios(prev => prev.filter(r => r.id !== id));
+    } else {
+      throw new Error(data.message || 'Erro ao remover remédio');
+    }
   }
 
   return (
