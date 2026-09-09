@@ -23,6 +23,10 @@ export class Remedio {
     @Column({ type: "text", nullable: true })
     observacoes: string;
 
+    // intervalo em horas entre as doses — ex: 8 = a cada 8h (opcional)
+    @Column({ name: "frequencia_horas", type: "int", nullable: true })
+    frequenciaHoras: number | null;
+
     @ManyToOne(() => Usuario, { onDelete: "CASCADE" })
     @JoinColumn({ name: "usuario_id" })
     usuario: Usuario;
