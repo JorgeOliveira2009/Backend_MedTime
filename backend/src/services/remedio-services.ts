@@ -7,6 +7,7 @@ export const criarRemedio = async (
         nome: string;
         horario: string;
         observacoes?: string;
+        frequenciaHoras?: number;
     }
 ) => {
     const remedio = new Remedio();
@@ -14,6 +15,7 @@ export const criarRemedio = async (
     remedio.nome = dados.nome;
     remedio.horario = dados.horario;
     if (dados.observacoes) remedio.observacoes = dados.observacoes;
+    if (dados.frequenciaHoras) remedio.frequenciaHoras = dados.frequenciaHoras;
 
     const salvo = await remedioRepository.criar(remedio);
     return formatarRemedio(salvo);
@@ -40,6 +42,7 @@ export const atualizarRemedio = async (
         nome: string;
         horario: string;
         observacoes: string;
+        frequenciaHoras: number;
     }>
 ) => {
     const remedio = await remedioRepository.buscarPorId(id);
@@ -50,6 +53,7 @@ export const atualizarRemedio = async (
     if (dados.nome)       remedio.nome = dados.nome;
     if (dados.horario)    remedio.horario = dados.horario;
     if (dados.observacoes !== undefined) remedio.observacoes = dados.observacoes;
+    if (dados.frequenciaHoras !== undefined) remedio.frequenciaHoras = dados.frequenciaHoras;
 
     const atualizado = await remedioRepository.atualizar(remedio);
     return formatarRemedio(atualizado);
@@ -71,7 +75,7 @@ export const marcarTomado = async (id: number, usuarioId: number) => {
     if (!remedio) throw new Error("Remédio não encontrado");
     if (remedio.usuarioId !== usuarioId) throw new Error("Sem permissão");
 
-    remedio.tomado = !remedio.tomado; // toggle — marca e desmarca
+    remedio.tomado = !remedio.tomado;
     const atualizado = await remedioRepository.atualizar(remedio);
     return formatarRemedio(atualizado);
 };
@@ -83,7 +87,12 @@ const formatarRemedio = (remedio: Remedio) => ({
     horario: remedio.horario,
     tomado: remedio.tomado,
     observacoes: remedio.observacoes ?? null,
+    frequenciaHoras: remedio.frequenciaHoras ?? null,
     usuarioId: remedio.usuarioId,
     createdAt: remedio.createdAt,
     updatedAt: remedio.updatedAt,
+    // campo data no formato YYYY-MM-DD que o frontend usa pra filtrar por dia
+    data: remedio.createdAt
+        ? remedio.createdAt.toISOString().split('T')[0]
+        : '',
 });
