@@ -1,28 +1,42 @@
-// src/schemas/remedio.schema.ts
-import { z } from "zod";
+// src/models/remedio.ts
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
+import "reflect-metadata";
+import { Usuario } from "./user";
 
-export const criarRemedioSchema = z.object({
-    nome: z.string()
-        .min(2, "Nome deve ter pelo menos 2 caracteres")
-        .max(100, "Nome muito longo"),
-    horario: z.string()
-        .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido — use o formato HH:MM"),
-    observacoes: z.string()
-        .max(500, "Observações muito longas")
-        .optional(),
-});
+@Entity("remedios")
+export class Remedio {
 
-export const atualizarRemedioSchema = z.object({
-    nome: z.string()
-        .min(2, "Nome deve ter pelo menos 2 caracteres")
-        .max(100, "Nome muito longo")
-        .optional(),
-    horario: z.string()
-        .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido — use o formato HH:MM")
-        .optional(),
-    observacoes: z.string()
-        .max(500, "Observações muito longas")
-        .optional(),
-}).refine(data => data.nome || data.horario || data.observacoes, {
-    message: "Pelo menos um campo deve ser fornecido",
-});
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({ length: 100, nullable: false })
+    nome: string;
+
+    // horário que deve tomar — ex: "08:00"
+    @Column({ length: 5, nullable: false })
+    horario: string;
+
+    // false = ainda não tomou hoje, true = já tomou
+    @Column({ default: false })
+    tomado: boolean;
+
+    @Column({ type: "text", nullable: true })
+    observacoes: string;
+
+    // intervalo em horas entre as doses — ex: 8 = a cada 8h (opcional)
+    @Column({ name: "frequencia_horas", type: "int", nullable: true })
+    frequenciaHoras: number | null;
+
+    @ManyToOne(() => Usuario, { onDelete: "CASCADE" })
+    @JoinColumn({ name: "usuario_id" })
+    usuario: Usuario;
+
+    @Column({ name: "usuario_id" })
+    usuarioId: number;
+
+    @CreateDateColumn({ name: "created_at" })
+    createdAt: Date;
+
+    @UpdateDateColumn({ name: "updated_at" })
+    updatedAt: Date;
+}
