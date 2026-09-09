@@ -16,6 +16,10 @@ export class Remedio {
     @Column({ length: 5, nullable: false })
     horario: string;
 
+    // data escolhida para o remédio — ex: "2026-09-15"
+    @Column({ type: "date", nullable: true })
+    data: string | null;
+
     // false = ainda não tomou hoje, true = já tomou
     @Column({ default: false })
     tomado: boolean;
