@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node backend/server.ts",
-    "start": "node backend/server.js",
-    "build": "tsc",
+    "start": "node dist/backend/server.js",
+"build": "tsc && echo Build concluído",
     "dev:ts": "ts-node-dev --respawn backend/server.ts",
     "test": "jest",
     "test:watch": "jest --watch",
