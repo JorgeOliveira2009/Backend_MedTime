@@ -31,7 +31,7 @@ export const extrairTextoDaImagem = async (buffer: Buffer, mimetype: string) => 
         clearTimeout(timeoutId);
     }
 
-    const json = await resposta.json();
+    const json = await resposta.json() as any;
 
     if (json.IsErroredOnProcessing) {
         throw new CustomError(json.ErrorMessage?.[0] ?? "Erro ao processar a imagem", 502);
